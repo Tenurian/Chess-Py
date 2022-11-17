@@ -51,12 +51,8 @@ class Board:
             # set up the normal starting positions of the board
             # pawns
             for x in range(8):
-                LightPawn = Pawn(Color.LIGHT, Location(x, 6))
-                DarkPawn  = Pawn(Color.DARK,  Location(x, 1))
-                self.__board[1][x] = DarkPawn
-                self.__board[6][x] = LightPawn
-                self.__pieces[Color.DARK].append(DarkPawn)
-                self.__pieces[Color.LIGHT].append(LightPawn)
+                self.addPieceToBoard(Pawn(Color.DARK,  Location(x, 1)))
+                self.addPieceToBoard(Pawn(Color.LIGHT, Location(x, 6)))
                 
             # Using lambdas here because some online interpreters don't support python3.10's
             # 'match-case' syntax, and this essentially does the same job without causing issues
@@ -71,45 +67,30 @@ class Board:
                 D2L = Location(7-i,0)
                 L1L = Location(i, 7)
                 L2L = Location(7-i, 7)
-                
-                
                 genPieces = {
                     PieceType.ROOK: __genRooks(D1L,D2L,L1L,L2L),
                     PieceType.BISHOP: __genBishops(D1L,D2L,L1L,L2L),
                     PieceType.KNIGHT: __genKnights(D1L,D2L,L1L,L2L)
                 }
-                D1,D2,L1,L2 = genPieces[p]
-                    
-                self.__board[D1L.y][D1L.x] = D1
-                self.__board[D2L.y][D2L.x] = D2
-                self.__board[L1L.y][L1L.x] = L1
-                self.__board[L2L.y][L2L.x] = L2
-                self.__pieces[Color.DARK].append(D1)
-                self.__pieces[Color.DARK].append(D2)
-                self.__pieces[Color.LIGHT].append(L1)
-                self.__pieces[Color.LIGHT].append(L2)
+                for g in genPieces[p]:
+                    self.addPieceToBoard(g)
 
             # Statically place the regency
-            DK = King(Color.DARK, Location(3,0))
-            self.__board[DK.getLocation().y][DK.getLocation().x] = DK
-            self.__pieces[Color.DARK].append(DK)
-
-            DQ = Queen(Color.DARK, Location(4,0))
-            self.__board[DQ.getLocation().y][DQ.getLocation().x] = DQ
-            self.__pieces[Color.DARK].append(DQ)
+            self.addPieceToBoard(King(Color.DARK, Location(3,0)))
+            self.addPieceToBoard(Queen(Color.DARK, Location(4,0)))
             
-            
-            LK = King(Color.LIGHT, Location(4,7))
-            self.__board[LK.getLocation().y][LK.getLocation().x] = LK
-            self.__pieces[Color.LIGHT].append(LK)
-            
-            LQ = Queen(Color.LIGHT, Location(3,7))
-            self.__board[LQ.getLocation().y][LQ.getLocation().x] = LQ
-            self.__pieces[Color.LIGHT].append(LQ)
+            self.addPieceToBoard(King(Color.LIGHT, Location(4,7)))
+            self.addPieceToBoard(Queen(Color.LIGHT, Location(3,7)))
             
     def __str__(self):
         return ''.join(["---------------------------------\n| {} | {} | {} | {} | {} | {} | {} | {} |\n".format(*(p.SYMBOL if p else ' ' for p in row)) for row in self.__board]) + "---------------------------------\n"
 
+    def getPieces(self,color = False):
+        if not color:
+            return self.__pieces
+        else:
+            return self.__pieces[color]
+    
     def getPieceAtLocation(self,location):
         return self.__board[location.y][location.x]
 
@@ -118,13 +99,20 @@ class Board:
             for index,piece in enumerate(self.__pieces[self.__board[location.y][location.x].COLOR]):
                 if piece == self.__board[location.y][location.x]:
                     return self.__pieces[piece.COLOR].pop(index)
+        return None
+
+    def addPieceToBoard(self,piece):
+        self.__board[piece.getLocation().y][piece.getLocation().x] = piece
+        self.__pieces[piece.COLOR].append(piece)
 
     def movePieceToLocation(self,piece,destination):
         current_loc = piece.getLocation()
+        self.__board[current_loc.y][current_loc.x] = None
+        
         self.__board[destination.y][destination.x] = piece
         if self.getPieceAtLocation(destination) != None:
             self.removePieceAtLocation(destination)
-        self.__board[current_loc.y][current_loc.x] = None
+        return piece
 
 class Piece(ABC): # color, piecetype, location
     __SYMBOLS = {
@@ -168,10 +156,13 @@ class Piece(ABC): # color, piecetype, location
         return None
     
     def tryMove(self,destination,board):
+        moved_successfully = False
         if destination in self.getValidLocations(board):
             if board.getPieceAtLocation(destination) != None:
                 board.removePieceAtLocation(destination)
             board.movePieceToLocation(self.__location,destination)
+            moved_successfully = True
+        return moved_successfully
 
 class Pawn(Piece): # color, location
     __firstmove = True
@@ -290,7 +281,44 @@ class Bishop(Piece): # color, location, piecetype override for queen
         super().__init__(color, piecetype, location)
 
     def getValidLocations(self,board):
-        raise "This Method has not yet been implemented"
+        curr_loc = self.getLocation()
+        valid_locs = []
+        NW = NE = SE = SW = True
+        for i in range(1,8):
+            if NW and curr_loc.x-i >= 0 and curr_loc.y-i >= 0:
+                NWL = Location(curr_loc.x-i,curr_loc.y-i)
+                if board.getPieceAtLocation(NWL) != None:
+                    NW = False
+                    if self.COLOR != board.getPieceAtLocation().COLOR:
+                        valid_locs.append(NWL)
+                else:
+                    valid_locs.append(NWL)
+            if NE and curr_loc.x+i <= 7 and curr_loc.y-i >= 0:
+                NEL = Location(curr_loc.x+i,curr_loc.y-i)
+                if board.getPieceAtLocation(NEL) != None:
+                    NE = False
+                    if self.COLOR != board.getPieceAtLocation().COLOR:
+                        valid_locs.append(NEL)
+                else:
+                    valid_locs.append(NEL)
+            if SE and curr_loc.x+i <= 7 and curr_loc.y+i <= 7:
+                SEL = Location(curr_loc.x+i,curr_loc.y+i)
+                if board.getPieceAtLocation(SEL) != None:
+                    SE = False
+                    if self.COLOR != board.getPieceAtLocation().COLOR:
+                        valid_locs.append(SEL)
+                else:
+                    valid_locs.append(SEL)
+            if SW and curr_loc.x-i >= 0 and curr_loc.y+i <= 7:
+                SWL + Location(curr_loc.x-i,curr_loc.y+i)
+                if board.getPieceAtLocation(SWL) != None:
+                    SW = False
+                    if self.COLOR != board.getPieceAtLocation().COLOR:
+                        valid_locs.append(SWL)
+                else:
+                    valid_locs.append(SWL)
+            
+        return valid_locs
 
 class Queen(Rook,Bishop):
     def __init__(self,color,location):
@@ -303,6 +331,20 @@ class King(Piece):
     def __init__(self, color, location):
         super().__init__(color, PieceType.KING, location)
 
+    def isSurrounded(self,board):
+        return len(self.getValidLocations(self,board)) == 0
+        
+    def isInCheck(self,board):
+        raise "This function has not yet been implemented"
+        # return False
+    
+    def isCheckMate(self,board):
+        # is surrounded
+        # is checked
+        # can't intercept
+        raise "This function has not yet been implemented"
+        # return False
+
     def getValidLocations(self,board):
         possible_locs = [
             Location(self.getLocation().x-1, self.getLocation().y-1),   # nw
@@ -314,14 +356,45 @@ class King(Piece):
             Location(self.getLocation().x+1, self.getLocation().y-1),   # sw
             Location(self.getLocation().x+0, self.getLocation().y-1)    # w
         ]
-        valid_locations = [loc for loc in probable_locs if board.getPieceAtLocation(loc) == None or board.getPieceAtLocation(loc).COLOR != self.COLOR ]
+        
+        # Boundary Detection
+        for i,loc in enumerate(possible_locs):
+            if loc.x < 0 or loc.x > 7 or loc.y < 0 or loc.y > 7:
+                possible_locs.pop(i)
+        
+        # Technically these aren't really the *valid* locations, only the ones within the
+        # boundaries of the board
+        probable_locs = [loc for loc in possible_locs if board.getPieceAtLocation(loc) == None or board.getPieceAtLocation(loc).COLOR != self.COLOR ]
+        
+        # This should prevent king from moving into check
+        valid_locations = [*probable_locs]
+        for opponent_piece in board.getPieces(Color.DARK if self.COLOR == Color.LIGHT else Color.LIGHT):
+            # casting to string so we're comparing coordinates 
+            # instead of memory addresses or unique identifiers
+            opp_locs = [str(l) for l in opponent_piece.getValidLocations(board)]
+            for i,p_loc in enumerate(probable_locs):
+                if str(p_loc) in opp_locs and p_loc in valid_locations:
+                    valid_locations.pop(valid_locations.index(p_loc))
+        
         return valid_locations
-        #still need to add in moving into check validation
 
 if  __name__ == "__main__":
-    board = Board()
+    # board = Board()
+    board = Board( [ [ None for col in range(8) ] for row in range(8) ] )
+    K1 = King(Color.LIGHT, Location(3,3))
+    board.addPieceToBoard(K1)
+    r1 = Rook(Color.DARK, Location(2,0))
+    board.addPieceToBoard(r1)
+    r2 = Rook(Color.DARK, Location(4,0))
+    board.addPieceToBoard(r2)
+    r3 = Rook(Color.DARK, Location(0,2))
+    board.addPieceToBoard(r3)
+    r4 = Rook(Color.DARK, Location(0,4))
+    board.addPieceToBoard(r4)
     print(board)
-    print(board.getPieceAtLocation(Location(6,6)))
-    print([str(l) for l in board.getPieceAtLocation(Location(0,6)).getValidLocations(board)])
-    print(board.getPieceAtLocation(Location(0,1)))
-    print([str(l) for l in board.getPieceAtLocation(Location(0,1)).getValidLocations(board)])
+    # print(board.getPieces())
+    print(len(K1.getValidLocations(board)),[str(loc) for loc in K1.getValidLocations(board)])
+    # print(board.getPieceAtLocation(Location(6,6)))
+    # print([str(l) for l in board.getPieceAtLocation(Location(0,6)).getValidLocations(board)])
+    # print(board.getPieceAtLocation(Location(0,1)))
+    # print([str(l) for l in board.getPieceAtLocation(Location(0,1)).getValidLocations(board)])
