@@ -106,9 +106,6 @@ class Board:
             LQ = Queen(Color.LIGHT, Location(3,7))
             self.__board[LQ.getLocation().y][LQ.getLocation().x] = LQ
             self.__pieces[Color.LIGHT].append(LQ)
-
-
-            print(self)
             
     def __str__(self):
         return ''.join(["---------------------------------\n| {} | {} | {} | {} | {} | {} | {} | {} |\n".format(*(p.SYMBOL if p else ' ' for p in row)) for row in self.__board]) + "---------------------------------\n"
@@ -123,11 +120,8 @@ class Board:
                     return self.__pieces[piece.COLOR].pop(index)
 
     def movePieceToLocation(self,piece,destination):
-        print('attempting to move {} to {}'.format(piece,destination))
         current_loc = piece.getLocation()
-        print(current_loc,destination)
         self.__board[destination.y][destination.x] = piece
-        print(self.__board[destination.y][destination.x])
         if self.getPieceAtLocation(destination) != None:
             self.removePieceAtLocation(destination)
         self.__board[current_loc.y][current_loc.x] = None
@@ -158,7 +152,6 @@ class Piece(ABC): # color, piecetype, location
     SYMBOL = None
     
     def __init__(self,color,piecetype,location):
-        # print(color,piecetype,location)
         self.__PIECETYPE = piecetype
         self.COLOR = color
         self.__location = location
@@ -301,13 +294,11 @@ class King(Piece):
             Location(self.getLocation().x+1, self.getLocation().y-1),   # sw
             Location(self.getLocation().x+0, self.getLocation().y-1)    # w
         ]
-        print(probable_locs)
         valid_locations = [loc for loc in probable_locs if board.getPieceAtLocation(loc) == None or board.getPieceAtLocation(loc).COLOR != self.COLOR ]
         return valid_locations
         #still need to add in moving into check validation
 
 if  __name__ == "__main__":
-    print("now we're cooking with gas")
     board = Board()
     R3 = Rook(Color.LIGHT,Location(3,2))
     board.movePieceToLocation(R3, Location(3,3))
