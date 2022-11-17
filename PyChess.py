@@ -175,18 +175,38 @@ class Piece(ABC): # color, piecetype, location
 
 class Pawn(Piece): # color, location
     __firstmove = True
+    __is_ep_valid = False
     def __init__(self,color,location):
         super().__init__(color, PieceType.PAWN, location)
 
     def getValidLocations(self,board):
         # if first move
-        # ternary y + (-2 if color == color.light else 2), x
-        # don't forget en passant
-        # in addition to just simply 
-        # ternary y + (-1 if color == color.light else 1), x if board@loc(x,y) == None
-        # as well as
-        # ternary y + (-1 if color == color.light else 1), x+-1 if board@loc(x,y).COLOR != self.COLOR
-        raise "This Method has not yet been implemented"
+        valid_locs = []
+        curr_loc = self.getLocation()
+        direction = ( -1 if self.COLOR == Color.LIGHT else 1 )
+        if self.__firstmove:
+            possible_loc = Location(curr_loc.x, curr_loc.y + (2 * direction))
+            if board.getPieceAtLocation(possible_loc) == None:
+                valid_locs.append( possible_loc )
+        
+        # ADD IN THE EN PASSANT LOGIC HERE
+        
+        if curr_loc.y != (0 if self.COLOR == Color.LIGHT else 7):
+            valid_locs.append(Location(curr_loc.x,curr_loc.y + direction))
+            if curr_loc.x > 0: # Attacking to the east
+                attack_east_loc = Location(curr_loc.x - 1, curr_loc.y + direction)
+                if board.getPieceAtLocation(attack_east_loc) != None:
+                    if board.getPieceAtLocation(attack_east_loc).COLOR != self.COLOR:
+                        valid_locations.append(attack_east_loc)
+            
+            if curr_loc.x < 7: # Attacking to the west
+                attack_west_loc = Location(curr_loc.x + 1, curr_loc.y + direction)
+                if board.getPieceAtLocation(attack_west_loc) != None:
+                    if board.getPieceAtLocation(attack_west_loc).COLOR != self.COLOR:
+                        valid_locations.append(attack_west_loc)
+        else:
+            raise "This pawn needs to be upgraded"
+        return valid_locs
 
 class Rook(Piece): # color, location, piecetype override for queen
     def __init__(self, color, location, piecetype = PieceType.ROOK):
@@ -300,7 +320,8 @@ class King(Piece):
 
 if  __name__ == "__main__":
     board = Board()
-    R3 = Rook(Color.LIGHT,Location(3,2))
-    board.movePieceToLocation(R3, Location(3,3))
     print(board)
-    print([str(l) for l in R3.getValidLocations(board)])
+    print(board.getPieceAtLocation(Location(6,6)))
+    print([str(l) for l in board.getPieceAtLocation(Location(0,6)).getValidLocations(board)])
+    print(board.getPieceAtLocation(Location(0,1)))
+    print([str(l) for l in board.getPieceAtLocation(Location(0,1)).getValidLocations(board)])
