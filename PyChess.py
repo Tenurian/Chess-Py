@@ -400,42 +400,25 @@ class King(Piece):
             if str(p) not in occupied_locations:
                 valid_locations.append(p)
         
-        print([str(l) for l in valid_locations])
         return valid_locations
 
 if  __name__ == "__main__":
-    # board = Board()
-    # board = Board( [ [ None for col in range(8) ] for row in range(8) ] )
-    # K1 = King(Color.LIGHT, Location(3,3))
-    # board.addPieceToBoard(K1)
-    # r1 = Rook(Color.DARK, Location(2,0))
-    # board.addPieceToBoard(r1)
-    # r2 = Rook(Color.DARK, Location(4,0))
-    # board.addPieceToBoard(r2)
-    # r3 = Rook(Color.DARK, Location(0,2))
-    # board.addPieceToBoard(r3)
-    # r4 = Rook(Color.DARK, Location(0,4))
-    # board.addPieceToBoard(r4)
-    # q1 = Queen(Color.DARK, Location(0,0))
-    # board.addPieceToBoard(q1)
-    # B1 = Rook(Color.LIGHT, Location(0,1))
-    # board.addPieceToBoard(B1)
-    # print('checkmate:',K1.isCheckMate(board))
-    # print(board)
-
-    print("For King valid location checks, when we go thru the list of all opponent's pieces we need to isolate each piece (leaving King's pieces) to get *literally every possible valid move*")
-
     board = Board( [ [ None for col in range(8) ] for row in range(8) ] )
     K1 = King(Color.DARK, Location(4,0))
     r1 = Rook(Color.LIGHT, Location(0,0))
+    n1 = Knight(Color.LIGHT, Location(5,3))
     q1 = Queen(Color.LIGHT, Location(4,1))
-    r2 = Rook(Color.LIGHT, Location(4,7))
+    r2 = Rook(Color.LIGHT, Location(4,3))
+    P1 = Pawn(Color.LIGHT,Location(4,2))
     # R1 = Rook(Color.DARK, Location(3,7))
     board.addPieceToBoard(K1)
     board.addPieceToBoard(r1)
     board.addPieceToBoard(q1)
-    board.addPieceToBoard(r2)
-    # board.addPieceToBoard(R1)
+    
+    board.addPieceToBoard(n1)
+    # board.addPieceToBoard(r2)
+    
+    # board.addPieceToBoard(R1) # 
     print('isSurrounded:\t',K1.isSurrounded(board))
     print('isInCheck:\t\t',K1.isInCheck(board))
     print('hasIntercepts:\t',K1.hasIntercepts(board))
